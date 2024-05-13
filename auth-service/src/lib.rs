@@ -1,7 +1,7 @@
+use crate::routes::{login, logout, signup, verify_2fa, verify_token};
 use axum::{http::StatusCode, response::IntoResponse, routing::post, serve::Serve, Router};
 use std::error::Error;
 use tower_http::services::ServeDir;
-use crate::routes::{signup, login, logout, verify_2fa, verify_token};
 pub mod routes;
 
 // This struct encapsulates our application-related logic.
