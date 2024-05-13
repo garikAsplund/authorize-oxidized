@@ -1,5 +1,5 @@
 use crate::routes::{login, logout, signup, verify_2fa, verify_token};
-use axum::{http::StatusCode, response::IntoResponse, routing::post, serve::Serve, Router};
+use axum::{routing::post, serve::Serve, Router};
 use std::error::Error;
 use tower_http::services::ServeDir;
 pub mod routes;
