@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::domain::user::User;
+use crate::domain::User;
 
 #[derive(Debug, PartialEq)]
 pub enum UserStoreError {

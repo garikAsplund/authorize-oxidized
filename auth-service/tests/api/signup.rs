@@ -2,7 +2,18 @@ use crate::helpers::{get_random_email, TestApp};
 
 #[tokio::test]
 async fn should_return_201_if_valid_input() {
-    todo!()
+    let app = TestApp::new().await;
+
+    let random_email = get_random_email(); // Call helper method to generate email 
+
+    let response = app
+        .post_signup(&serde_json::json!({
+            "email": random_email,
+            "password": "password123",
+            "requires2FA": true
+        }))
+        .await; // call `post_signup`
+    assert_eq!(response.status().as_u16(), 201);
 }
 
 #[tokio::test]
