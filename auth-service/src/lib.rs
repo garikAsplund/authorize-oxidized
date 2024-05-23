@@ -2,7 +2,10 @@ use crate::routes::{login, logout, signup, verify_2fa, verify_token};
 use axum::{routing::post, serve::Serve, Router};
 use std::error::Error;
 use tower_http::services::ServeDir;
+
 pub mod routes;
+pub mod domain;
+pub mod services;
 
 // This struct encapsulates our application-related logic.
 pub struct Application {
