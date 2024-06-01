@@ -1,5 +1,5 @@
-use auth_service::ErrorResponse;
 use crate::helpers::{get_random_email, TestApp};
+use auth_service::ErrorResponse;
 
 #[tokio::test]
 async fn should_return_201_if_valid_input() {
@@ -71,7 +71,8 @@ async fn should_return_400_if_invalid_input() {
                 .error,
             "Invalid credentials".to_owned()
         );
-    }}
+    }
+}
 
 #[tokio::test]
 async fn should_return_409_if_email_already_exists() {
@@ -80,13 +81,12 @@ async fn should_return_409_if_email_already_exists() {
 
     let random_email = get_random_email(); // Call helper method to generate email
 
-    let response = app
-        .post_signup(&serde_json::json!({
-            "email": random_email,
-            "password": "password123",
-            "requires2FA": true
-        }))
-        .await; // call `post_signup`
+    app.post_signup(&serde_json::json!({
+        "email": random_email,
+        "password": "password123",
+        "requires2FA": true
+    }))
+    .await;
 
     let response = app
         .post_signup(&serde_json::json!({
