@@ -34,6 +34,7 @@ impl TwoFACodeStore for HashmapTwoFACodeStore {
         &self,
         email: &Email,
     ) -> Result<(LoginAttemptId, TwoFACode), TwoFACodeStoreError> {
+        println!("{:?}", self.codes);
         match self.codes.get(email) {
             Some((login_attempt_id, code)) => Ok((login_attempt_id.clone(), code.clone())),
             None => Err(TwoFACodeStoreError::LoginAttemptIdNotFound),

@@ -70,7 +70,19 @@ async fn handle_2fa(
         .two_fa_code_store
         .write()
         .await
-        .add_code(email.to_owned(), login_attempt_id.clone(), two_fa_code)
+        .add_code(email.to_owned(), login_attempt_id.clone(), two_fa_code.clone())
+        .await
+        .is_err()
+    {
+        return (jar, Err(AuthAPIError::UnexpectedError));
+    }
+
+    // TODO: send 2FA code via the email client. Return `AuthAPIError::UnexpectedError` if the operation fails.
+    if state
+        .email_client
+        .read()
+        .await
+        .send_email(email, "Your code!", two_fa_code.as_ref())
         .await
         .is_err()
     {

@@ -72,13 +72,12 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     assert_eq!(json_body.message, "2FA required".to_owned());
 
     let two_fa_code_store = app.two_fa_code_store.read().await;
-    println!("Two Factor Code Store: {:?}", two_fa_code_store);
     let email = Email::parse(random_email).unwrap();
     match two_fa_code_store.get_code(&email).await {
         Ok((login_attempt_id, _)) => {
             assert_eq!(login_attempt_id, LoginAttemptId::parse(json_body.login_attempt_id).unwrap());
         }
-        Err(err) => println!("Error getting 2FA code: {:?}", err),
+        Err(err) => eprintln!("Error getting 2FA code: {:?}", err),
     }
 }
 
