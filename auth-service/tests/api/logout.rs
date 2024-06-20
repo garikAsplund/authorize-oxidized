@@ -5,62 +5,57 @@ use crate::helpers::{get_random_email, TestApp};
 
 #[tokio::test]
 async fn should_return_200_if_valid_jwt_cookie() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
     
     let random_email = get_random_email();
-
     let signup_body = serde_json::json!({
         "email": random_email,
-        "password": "password123",
+        "password": "pass1234",
         "requires2FA": false
     });
 
-    let response = app.post_signup(&signup_body).await;
-
-    assert_eq!(response.status().as_u16(), 201);
+    let signup_response = app.post_signup(&signup_body).await;
+    assert_eq!(signup_response.status().as_u16(), 201);
 
     let login_body = serde_json::json!({
-        "email": random_email,
-        "password": "password123",
+        "email":random_email,
+        "password": "pass1234",
     });
 
-    let response = app.post_login(&login_body).await;
+    let login_response = app.post_login(&login_body).await;
+    assert_eq!(login_response.status().as_u16(), 200);
 
-    assert_eq!(response.status().as_u16(), 200);
-
-    let auth_cookie = response
+    let cookie = login_response
         .cookies()
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
         .expect("No auth cookie found");
+    assert!(!cookie.value().is_empty());
 
-    assert!(!auth_cookie.value().is_empty());
+    let token = cookie.value();
+    let logout_response = app.post_logout().await;
+    assert_eq!(logout_response.status().as_u16(), 200);
 
-    let token = auth_cookie.value();
-
-    let response = app.post_logout().await;
-
-    assert_eq!(response.status().as_u16(), 200);
-
-    let auth_cookie = response
+    let cookie = logout_response
         .cookies()
         .find(|cookie| cookie.name() == JWT_COOKIE_NAME)
         .expect("No auth cookie found");
+    assert!(cookie.value().is_empty());
 
-    assert!(auth_cookie.value().is_empty());
+    app.clean_up().await;
 
-    let banned_token_store = app.banned_token_store.read().await;
-    let contains_token = banned_token_store
+    let token_store = app.banned_token_store.read().await;
+    let get_token_response: bool = token_store
         .check_if_token_is_banned(token)
         .await
-        .expect("Failed to check if token is banned");
+        .expect("Failed to check if token banned");
 
-    assert!(contains_token);
+    assert!(get_token_response);
 }
 
 #[tokio::test]
 async fn should_return_400_if_logout_called_twice_in_a_row() {
-    let app = TestApp::new().await;
-    
+    let mut app = TestApp::new().await;
+
     let random_email = get_random_email();
 
     let signup_body = serde_json::json!({
@@ -112,22 +107,26 @@ async fn should_return_400_if_logout_called_twice_in_a_row() {
             .error,
         "Missing token".to_owned()
     );
+
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_400_if_jwt_cookie_missing() {
-    let app = TestApp::new().await;
-    
+    let mut app = TestApp::new().await;
+
     // send post_logout without cookie
 
     let response = app.post_logout().await;
 
     assert_eq!(response.status().as_u16(), 400);
+
+    app.clean_up().await;
 }
 
 #[tokio::test]
 async fn should_return_401_if_invalid_token() {
-    let app = TestApp::new().await;
+    let mut app = TestApp::new().await;
 
     // add invalid cookie
     app.cookie_jar.add_cookie_str(
@@ -141,7 +140,6 @@ async fn should_return_401_if_invalid_token() {
     let response = app.post_logout().await;
 
     assert_eq!(response.status().as_u16(), 401);
-
 
     let auth_cookie = response
         .cookies()
@@ -157,4 +155,6 @@ async fn should_return_401_if_invalid_token() {
             .error,
         "Invalid token".to_owned()
     );
+
+    app.clean_up().await;
 }
