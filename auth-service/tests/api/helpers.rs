@@ -3,7 +3,7 @@ use auth_service::{
         hashmap_two_fa_code_store::HashmapTwoFACodeStore, hashmap_user_store::HashmapUserStore,
         hashset_banned_token_store::HashsetBannedTokenStore, mock_email_client::MockEmailClient,
         postgres_user_store::PostgresUserStore, redis_banned_token_store::RedisBannedTokenStore,
-    }, utils::constants::{test, DATABASE_URL}, Application
+    }, utils::constants::{test, DATABASE_URL, DEFAULT_REDIS_HOSTNAME}, Application
 };
 use reqwest::cookie::Jar;
 use sqlx::{
@@ -181,7 +181,7 @@ async fn configure_postgresql() -> PgPool {
 }
 
 fn configure_redis() -> redis::Connection {
-    let redis_hostname = "localhost".to_owned();
+    let redis_hostname = DEFAULT_REDIS_HOSTNAME.to_owned();
 
     get_redis_client(redis_hostname)
         .expect("Failed to get Redis client")

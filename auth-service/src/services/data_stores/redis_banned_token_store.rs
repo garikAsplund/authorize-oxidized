@@ -35,8 +35,16 @@ impl BannedTokenStore for RedisBannedTokenStore {
 
     async fn check_if_token_is_banned(&self, token: &str) -> Result<bool, BannedTokenStoreError> {
         // Check if the token exists by calling the exists method on the Redis connection
-        let mut conn = self.conn.write().await;
-        conn.exists(token).map_err(|_| BannedTokenStoreError::UnexpectedError)
+        let token_key = get_key(token);
+
+        let is_banned: bool = self
+            .conn
+            .write()
+            .await
+            .exists(&token_key)
+            .map_err(|_| BannedTokenStoreError::UnexpectedError)?;
+
+        Ok(is_banned)
     }
 }
 
