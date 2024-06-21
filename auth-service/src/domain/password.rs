@@ -1,12 +1,14 @@
+use color_eyre::eyre::{Result, eyre};
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Password (String);
 
 impl Password {
-    pub fn parse(input: String) -> Result<Password, String> {
+    pub fn parse(input: String) -> Result<Password> {
         if input.len() >= 8 {
             Ok(Password(input))
         } else {
-            Err(format!("{} is too short of a password. Passwords must contain at least 8 characters :)", input))
+            Err(eyre!("{} is too short of a password. Passwords must contain at least 8 characters :)", input))
         }
     }
 }

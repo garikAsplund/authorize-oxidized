@@ -1,12 +1,14 @@
+use color_eyre::eyre::{Result, eyre};
+
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub struct Email (String);
 
 impl Email {
-    pub fn parse(input: String) -> Result<Email, String> {
+    pub fn parse(input: String) -> Result<Email> {
         if input.contains('@') {
             Ok(Email(input))
         } else {
-            Err(format!("{} is an invalid email address :(", input))
+            Err(eyre!("{} is an invalid email address :(", input))
         }
     }
 }

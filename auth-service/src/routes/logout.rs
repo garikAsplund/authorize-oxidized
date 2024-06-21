@@ -5,6 +5,7 @@ use crate::{
     app_state::AppState, domain::AuthAPIError, utils::{auth::validate_token, constants::JWT_COOKIE_NAME}
 };
 
+#[tracing::instrument(name = "Logging out", skip_all)]
 pub async fn logout(State(state): State<AppState>, jar: CookieJar) -> (CookieJar, Result<impl IntoResponse, AuthAPIError>) {
     // Retrieve JWT cookie from the `CookieJar`
     // Return AuthAPIError::MissingToken is the cookie is not found
@@ -24,8 +25,8 @@ pub async fn logout(State(state): State<AppState>, jar: CookieJar) -> (CookieJar
 
     let jar = jar.remove(cookie::Cookie::from(JWT_COOKIE_NAME));
 
-    if state.banned_token_store.write().await.ban_token(token).await.is_err() {
-        return (jar, Err(AuthAPIError::UnexpectedError));
+    if let Err(e) = state.banned_token_store.write().await.ban_token(token).await {
+        return (jar, Err(AuthAPIError::UnexpectedError(e.into())));
     }
 
     (jar, Ok(StatusCode::OK))

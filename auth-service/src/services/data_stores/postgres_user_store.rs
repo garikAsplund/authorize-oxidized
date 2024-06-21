@@ -62,8 +62,10 @@ impl UserStore for PostgresUserStore {
         .map_err(|_| UserStoreError::UserNotFound)?;
 
         Ok(User {
-            email: Email::parse(result.email).map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?,
-            password: Password::parse(result.password_hash).map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?,
+            email: Email::parse(result.email)
+                .map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?,
+            password: Password::parse(result.password_hash)
+                .map_err(|e| UserStoreError::UnexpectedError(eyre!(e)))?,
             requires_2fa: result.requires_2fa,
         })
     }
@@ -129,25 +131,25 @@ async fn compute_password_hash(password: &str) -> Result<String> {
     let password_hash = tokio::task::spawn_blocking(move || {
         current_span.in_scope(|| {
             let salt: SaltString = SaltString::generate(&mut rand::thread_rng());
-            // match Argon2::new(
-            //     Algorithm::Argon2id,
-            //     Version::V0x13,
-            //     Params::new(15000, 2, 1, None)?,
-            // )
-            // .hash_password(password.as_bytes(), &salt)
-            // {
-            //     Ok(password_hash) => Ok(password_hash.to_string()),
-            //     Err(e) => Err(e),
-            // }
-            let password_hash = Argon2::new(
+            match Argon2::new(
                 Algorithm::Argon2id,
                 Version::V0x13,
                 Params::new(15000, 2, 1, None)?,
             )
-            .hash_password(password.as_bytes(), &salt)?
-            .to_string();
+            .hash_password(password.as_bytes(), &salt)
+            {
+                Ok(password_hash) => Ok(password_hash.to_string()),
+                Err(e) => Err(e),
+            }
+            // let password_hash = Argon2::new(
+            //     Algorithm::Argon2id,
+            //     Version::V0x13,
+            //     Params::new(15000, 2, 1, None)?,
+            // )
+            // .hash_password(password.as_bytes(), &salt)?
+            // .to_string();
 
-            Ok(password_hash)
+            // Ok(password_hash)
             // Err(eyre!("oh no!"))
         })
     })

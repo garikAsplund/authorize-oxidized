@@ -1,8 +1,8 @@
 use crate::routes::{
-    // login, 
-    // logout, 
+    login, 
+    logout, 
     signup, 
-    // verify_2fa, 
+    verify_2fa, 
     verify_token
 };
 use app_state::AppState;
@@ -57,9 +57,9 @@ impl Application {
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             .route("/signup", post(signup))
-            // .route("/login", post(login))
-            // .route("/logout", post(logout))
-            // .route("/verify-2fa", post(verify_2fa))
+            .route("/login", post(login))
+            .route("/logout", post(logout))
+            .route("/verify-2fa", post(verify_2fa))
             .route("/verify-token", post(verify_token))
             .with_state(app_state)
             .layer(cors)
