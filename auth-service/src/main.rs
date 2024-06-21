@@ -1,7 +1,7 @@
 use auth_service::{
     app_state::AppState, get_postgres_pool, get_redis_client, services::data_stores::{
-        hashmap_two_fa_code_store::HashmapTwoFACodeStore, redis_banned_token_store::RedisBannedTokenStore, hashmap_user_store::HashmapUserStore, hashset_banned_token_store::HashsetBannedTokenStore, mock_email_client::MockEmailClient, postgres_user_store::PostgresUserStore
-    }, utils::constants::{prod, DATABASE_URL, REDIS_HOST_NAME}, Application
+        hashmap_two_fa_code_store::HashmapTwoFACodeStore, hashmap_user_store::HashmapUserStore, hashset_banned_token_store::HashsetBannedTokenStore, mock_email_client::MockEmailClient, postgres_user_store::PostgresUserStore, redis_banned_token_store::RedisBannedTokenStore
+    }, utils::{constants::{prod, DATABASE_URL, REDIS_HOST_NAME}, tracing::init_tracing}, Application
 };
 use sqlx::PgPool;
 use std::sync::Arc;
@@ -9,6 +9,8 @@ use tokio::sync::RwLock;
 
 #[tokio::main]
 async fn main() {
+    color_eyre::install().expect("Failed to install color_eyre");
+    init_tracing().expect("Failed to initialize tracing");
     let pg_pool = configure_postgresql().await;
     let redis_conn = configure_redis();
     let user_store = Arc::new(RwLock::new(PostgresUserStore::new(pg_pool)));
