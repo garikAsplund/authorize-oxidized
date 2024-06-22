@@ -6,6 +6,7 @@ use auth_service::{
     }, utils::constants::{test, DATABASE_URL, DEFAULT_REDIS_HOSTNAME}, Application
 };
 use reqwest::cookie::Jar;
+use secrecy::{ExposeSecret, Secret};
 use sqlx::{
     postgres::{PgConnectOptions, PgPoolOptions}, Connection, Executor, PgConnection, PgPool
 };
@@ -172,7 +173,7 @@ async fn configure_postgresql() -> PgPool {
 
     configure_database(&postgresql_conn_url, &db_name).await;
 
-    let postgresql_conn_url_with_db = format!("{}/{}", postgresql_conn_url, db_name);
+    let postgresql_conn_url_with_db = Secret::new(format!("{}/{}", postgresql_conn_url.expose_secret(), db_name));
 
     // Create a new connection pool and return it
     get_postgres_pool(&postgresql_conn_url_with_db)
@@ -189,10 +190,10 @@ fn configure_redis() -> redis::Connection {
         .expect("Failed to get Redis connection")
 }
 
-async fn configure_database(db_conn_string: &str, db_name: &str) {
+async fn configure_database(db_conn_string: &Secret<String>, db_name: &str) {
     // Create database connection
     let connection = PgPoolOptions::new()
-        .connect(db_conn_string)
+        .connect(db_conn_string.expose_secret())
         .await
         .expect("Failed to create Postgres connection pool.");
 
@@ -203,7 +204,7 @@ async fn configure_database(db_conn_string: &str, db_name: &str) {
         .expect("Failed to create database.");
 
     // Connect to new database
-    let db_conn_string = format!("{}/{}", db_conn_string, db_name);
+    let db_conn_string = format!("{}/{}", db_conn_string.expose_secret(), db_name);
 
     let connection = PgPoolOptions::new()
         .connect(&db_conn_string)
@@ -218,7 +219,7 @@ async fn configure_database(db_conn_string: &str, db_name: &str) {
 }
 
 async fn delete_database(db_name: &str) {
-    let postgresql_conn_url: String = DATABASE_URL.to_owned();
+    let postgresql_conn_url: String = DATABASE_URL.expose_secret().to_owned();
 
     let connection_options = PgConnectOptions::from_str(&postgresql_conn_url)
         .expect("Failed to parse PostgreSQL connection string");

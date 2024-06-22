@@ -15,6 +15,7 @@ use axum::{
 };
 use domain::AuthAPIError;
 use redis::{Client, RedisResult};
+use secrecy::{ExposeSecret, Secret};
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::error::Error;
@@ -27,17 +28,13 @@ pub mod routes;
 pub mod services;
 pub mod utils;
 
-// This struct encapsulates our application-related logic.
 pub struct Application {
     server: Serve<Router, Router>,
-    // address is exposed as a public field
-    // so we have access to it in tests.
     pub address: String,
 }
 
 impl Application {
     pub async fn build(app_state: AppState, address: &str) -> Result<Self, Box<dyn Error>> {
-        // Allow the app service(running on our local machine and in production) to call the auth service
         let allowed_origins = [
             "http://localhost:8000".parse()?,
             // TODO: Replace [YOUR_DROPLET_IP] with your Droplet IP address
@@ -45,15 +42,10 @@ impl Application {
         ];
 
         let cors = CorsLayer::new()
-            // Allow GET and POST requests
             .allow_methods([Method::GET, Method::POST])
-            // Allow cookies to be included in requests
             .allow_credentials(true)
             .allow_origin(allowed_origins);
 
-        // Move the Router definition from `main.rs` to here.
-        // Also, remove the `hello` route.
-        // We don't need it at this point!
         let router = Router::new()
             .nest_service("/", ServeDir::new("assets"))
             .route("/signup", post(signup))
@@ -64,10 +56,6 @@ impl Application {
             .with_state(app_state)
             .layer(cors)
             .layer(
-                // New!
-                // Add a TraceLayer for HTTP requests to enable detailed tracing
-                // This layer will create spans for each request using the make_span_with_request_id function,
-                // and log events at the start and end of each request using on_request and on_response functions.
                 TraceLayer::new_for_http()
                     .make_span_with(make_span_with_request_id)
                     .on_request(on_request)
@@ -78,7 +66,6 @@ impl Application {
         let address = listener.local_addr()?.to_string();
         let server = axum::serve(listener, router);
 
-        // Create a new Application instance and return it
         Ok(Application { server, address })
     }
 
@@ -115,9 +102,8 @@ impl IntoResponse for AuthAPIError {
     }
 }
 
-pub async fn get_postgres_pool(url: &str) -> Result<PgPool, sqlx::Error> {
-    // Create a new PostgreSQL connection pool
-    PgPoolOptions::new().max_connections(5).connect(url).await
+pub async fn get_postgres_pool(url: &Secret<String>) -> Result<PgPool, sqlx::Error> {
+    PgPoolOptions::new().max_connections(5).connect(url.expose_secret()).await
 }
 
 pub fn get_redis_client(redis_hostname: String) -> RedisResult<Client> {

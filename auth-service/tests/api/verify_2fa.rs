@@ -5,6 +5,7 @@ use auth_service::{
     utils::constants::JWT_COOKIE_NAME,
     ErrorResponse,
 };
+use secrecy::{ExposeSecret, Secret};
 
 #[tokio::test]
 async fn should_return_200_if_correct_code() {
@@ -36,14 +37,14 @@ async fn should_return_200_if_correct_code() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(&Email::parse(random_email.clone()).unwrap())
+        .get_code(&Email::parse(Secret::new(random_email.clone())).unwrap())
         .await
         .unwrap();
 
     let body = serde_json::json!({
         "email": random_email,
-        "loginAttemptId": login_attempt_id.as_ref(),
-        "2FACode": two_fa_code.as_ref(),
+        "loginAttemptId": login_attempt_id.as_ref().expose_secret(),
+        "2FACode": two_fa_code.as_ref().expose_secret(),
     });
 
     let response = app.post_verify_2fa(&body).await;
@@ -181,7 +182,7 @@ async fn should_return_401_if_old_code() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(&Email::parse(random_email.clone()).unwrap())
+        .get_code(&Email::parse(Secret::new(random_email.clone())).unwrap())
         .await
         .unwrap();
 
@@ -198,7 +199,7 @@ async fn should_return_401_if_old_code() {
     let body = serde_json::json!({
         "email": random_email,
         "loginAttemptId": login_attempt_id,
-        "2FACode": first_2FA_code.as_ref(),
+        "2FACode": first_2FA_code.as_ref().expose_secret(),
     });
 
     let response = app.post_verify_2fa(&body).await;
@@ -244,14 +245,14 @@ async fn should_return_401_if_same_code_twice() {
         .two_fa_code_store
         .read()
         .await
-        .get_code(&Email::parse(random_email.clone()).unwrap())
+        .get_code(&Email::parse(Secret::new(random_email.clone())).unwrap())
         .await
         .unwrap();
 
     let body = serde_json::json!({
         "email": random_email,
-        "loginAttemptId": first_login_attempt_id.as_ref(),
-        "2FACode": first_two_fa_code.as_ref(),
+        "loginAttemptId": first_login_attempt_id.as_ref().expose_secret(),
+        "2FACode": first_two_fa_code.as_ref().expose_secret(),
     });
 
     let response = app.post_verify_2fa(&body).await;
