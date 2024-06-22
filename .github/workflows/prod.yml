@@ -1,6 +1,5 @@
 name: Build, Test and Deploy to Prod
 
-# Trigger the workflow when changes are pushed to the main branch
 on:
   push:
     branches:
@@ -15,14 +14,11 @@ jobs:
 
     services:
       postgres:
-        # Docker Hub image
         image: postgres:15.2-alpine
-        # Environment variables scoped only for the `postgres` element
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           POSTGRES_DB: postgres
-        # Opens tcp port 5432 on the host and service container
         ports:
           - 5432:5432
 
@@ -32,11 +28,9 @@ jobs:
           - 6379:6379
 
     steps:
-      # Checkout code from the repository
     - name: Checkout code
       uses: actions/checkout@v2
 
-      # Cache dependencies to speed up build times
     - name: Cache dependencies
       uses: actions/cache@v3
       with:
@@ -68,7 +62,6 @@ jobs:
         cargo build --verbose
         cargo test --verbose
 
-      # Set up Docker Buildx for multi-platform builds
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
@@ -120,6 +113,7 @@ jobs:
           export JWT_SECRET=${{ secrets.JWT_SECRET }}
           export AUTH_SERVICE_IP=${{ vars.DROPLET_IP }}
           export POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          export POSTMARK_AUTH_TOKEN=${{ secrets.POSTMARK_AUTH_TOKEN }} 
           docker compose down
           docker compose pull
           docker compose up -d

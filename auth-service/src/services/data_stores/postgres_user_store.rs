@@ -7,9 +7,9 @@ use argon2::{
     PasswordVerifier, Version,
 };
 use color_eyre::eyre::{eyre, Context, Result};
+use secrecy::{ExposeSecret, Secret};
 use sqlx::PgPool;
 use std::error::Error;
-use secrecy::{ExposeSecret, Secret};
 
 pub struct PostgresUserStore {
     pool: PgPool,
@@ -60,7 +60,8 @@ impl UserStore for PostgresUserStore {
         .map_err(|e| UserStoreError::UnexpectedError(e.into()))?
         .map(|row| {
             Ok(User {
-                email: Email::parse(Secret::new(row.email)).map_err(UserStoreError::UnexpectedError)?,
+                email: Email::parse(Secret::new(row.email))
+                    .map_err(UserStoreError::UnexpectedError)?,
                 password: Password::parse(Secret::new(row.password_hash))
                     .map_err(UserStoreError::UnexpectedError)?,
                 requires_2fa: row.requires_2fa,
@@ -68,7 +69,7 @@ impl UserStore for PostgresUserStore {
         })
         .ok_or(UserStoreError::UserNotFound)?
     }
-    
+
     #[tracing::instrument(name = "Validating user credentials in PostgreSQL", skip_all)]
     async fn validate_user(
         &self,
@@ -89,7 +90,7 @@ impl UserStore for PostgresUserStore {
 #[tracing::instrument(name = "Verify password hash", skip_all)]
 async fn verify_password_hash(
     expected_password_hash: Secret<String>, // Updated!
-    password_candidate: Secret<String>, // Updated!
+    password_candidate: Secret<String>,     // Updated!
 ) -> Result<()> {
     let current_span: tracing::Span = tracing::Span::current();
     let result = tokio::task::spawn_blocking(move || {
@@ -111,7 +112,8 @@ async fn verify_password_hash(
 }
 
 #[tracing::instrument(name = "Computing password hash", skip_all)]
-async fn compute_password_hash(password: Secret<String>) -> Result<Secret<String>> { // Updated!
+async fn compute_password_hash(password: Secret<String>) -> Result<Secret<String>> {
+    // Updated!
     let current_span: tracing::Span = tracing::Span::current();
 
     let result = tokio::task::spawn_blocking(move || {

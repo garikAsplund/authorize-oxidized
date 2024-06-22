@@ -6,6 +6,7 @@ use auth_service::{
     ErrorResponse,
 };
 use secrecy::Secret;
+use wiremock::{matchers::{method, path}, Mock, ResponseTemplate};
 
 #[tokio::test]
 async fn should_return_200_if_valid_credentials_and_2fa_disabled() {
@@ -57,6 +58,13 @@ async fn should_return_206_if_valid_credentials_and_2fa_enabled() {
     let response = app.post_signup(&signup_body).await;
 
     assert_eq!(response.status().as_u16(), 201);
+
+    Mock::given(path("/email"))
+        .and(method("POST"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(1)
+        .mount(&app.email_server)
+        .await; 
 
     let login_body = serde_json::json!({
         "email": random_email,
@@ -132,8 +140,6 @@ async fn should_return_422_if_malformed_credentials() {
 
 #[tokio::test]
 async fn should_return_400_if_invalid_input() {
-    // Call the log-in route with invalid credentials and assert that a
-    // 400 HTTP status code is returned along with the appropriate error message.
     let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
@@ -186,8 +192,6 @@ async fn should_return_400_if_invalid_input() {
 
 #[tokio::test]
 async fn should_return_401_if_incorrect_credentials() {
-    // Call the log-in route with incorrect credentials and assert
-    // that a 401 HTTP status code is returned along with the appropriate error message.
     let mut app = TestApp::new().await;
 
     let random_email = get_random_email();
