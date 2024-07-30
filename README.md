@@ -1,3 +1,7 @@
+# Two-factor authorization built with Rust
+
+This service is production ready and follows industry standards for CI/CD, traceability, and observability.
+
 ## Setup & Building
 ```bash
 cargo install cargo-watch
